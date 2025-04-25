@@ -1,6 +1,5 @@
 import { Input } from "@/components/ui/input";
 import React, { useContext, useEffect, useState } from "react";
-import Autocomplete from "react-google-autocomplete";
 import {
   PROMPT,
   SelectBudgetOptions,
@@ -26,11 +25,10 @@ import { LogInContext } from "@/Context/LogInContext/Login";
 import { db } from "@/Service/Firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import ReactGoogleAutocomplete from "react-google-autocomplete";
 
-function CreateTrip({createTripPageRef}) {
+function CreateTrip({ createTripPageRef }) {
   const [place, setPlace] = useState("");
-  const [formData, setFormData] = useState([]);
+  const [formData, setFormData] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -82,23 +80,22 @@ function CreateTrip({createTripPageRef}) {
 
   const generateTrip = async () => {
     if (!isAuthenticated) {
-      toast("Sign In to continue", {
-        icon: "⚠️",
-      });
+      toast("Sign In to continue", { icon: "⚠️" });
       return setIsDialogOpen(true);
     }
+    // Validate by trimming values
     if (
-      !formData?.noOfDays ||
-      !formData?.location ||
-      !formData?.People ||
-      !formData?.Budget
+      !formData?.noOfDays?.toString().trim() ||
+      !formData?.location?.toString().trim() ||
+      !formData?.People?.toString().trim() ||
+      !formData?.Budget?.toString().trim()
     ) {
       return toast.error("Please fill out every field or select every option.");
     }
-    if (formData?.noOfDays > 5) {
+    if (parseInt(formData.noOfDays, 10) > 5) {
       return toast.error("Please enter Trip Days less then 5");
     }
-    if (formData?.noOfDays < 1) {
+    if (parseInt(formData.noOfDays, 10) < 1) {
       return toast.error("Invalid number of Days");
     }
     const FINAL_PROMPT = PROMPT.replace(/{location}/g, formData?.location)
@@ -155,19 +152,11 @@ function CreateTrip({createTripPageRef}) {
             </span>{" "}
             🏖️
           </h2>
-
-{/* This is working */}
-{/* check which place is working or not */}
-<Autocomplete
-  apiKey={import.meta.env.VITE_GOOGLE_MAP_API_KEY}
-  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-center"
-  onPlaceSelected={(place) => {
-    setPlace(place);
-    console.log(place);
-    console.log("selected:", place.name);
-    handleInputChange("location", place.formatted_address);
-  }}
-/>
+          <Input
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-center"
+            placeholder="Enter location"
+            onChange={(e) => handleInputChange("location", e.target.value)}
+          />
         </div>
 
         <div className="day">
@@ -211,13 +200,22 @@ function CreateTrip({createTripPageRef}) {
                   `}
                 >
                   <h3 className="font-bold text-[15px] md:font-[18px]">
-                    {item.icon} <span className={`
-                      ${formData?.Budget == item.title ? 
-                      "bg-gradient-to-b from-blue-400 to-blue-700 bg-clip-text text-center text-transparent" :
-                      ""}
-                      `}>{item.title}</span>
+                    {item.icon}{" "}
+                    <span
+                      className={`
+                      ${
+                        formData?.Budget == item.title
+                          ? "bg-gradient-to-b from-blue-400 to-blue-700 bg-clip-text text-center text-transparent"
+                          : ""
+                      }
+                      `}
+                    >
+                      {item.title}
+                    </span>
                   </h3>
-                  <p className="bg-gradient-to-b from-primary/90 to-primary/60 bg-clip-text text-transparent">{item.desc}</p>
+                  <p className="bg-gradient-to-b from-primary/90 to-primary/60 bg-clip-text text-transparent">
+                    {item.desc}
+                  </p>
                 </div>
               );
             })}
@@ -238,18 +236,32 @@ function CreateTrip({createTripPageRef}) {
                   onClick={(e) => handleInputChange("People", item.no)}
                   key={item.id}
                   className={`option cursor-pointer transition-all hover:scale-110 p-4 h-32 flex items-center justify-center flex-col border rounded-lg hover:shadow-foreground/10 hover:shadow-md
-                    ${formData?.People == item.no && "border border-foreground/80"}
+                    ${
+                      formData?.People == item.no &&
+                      "border border-foreground/80"
+                    }
                   `}
                 >
                   <h3 className="font-bold text-[15px] md:font-[18px]">
-                    {item.icon} <span className={`
-                      ${formData?.People == item.no ? 
-                      "bg-gradient-to-b from-blue-400 to-blue-700 bg-clip-text text-center text-transparent" :
-                      ""}
-                      `}>{item.title}</span>
+                    {item.icon}{" "}
+                    <span
+                      className={`
+                      ${
+                        formData?.People == item.no
+                          ? "bg-gradient-to-b from-blue-400 to-blue-700 bg-clip-text text-center text-transparent"
+                          : ""
+                      }
+                      `}
+                    >
+                      {item.title}
+                    </span>
                   </h3>
-                  <p className="bg-gradient-to-b from-primary/90 to-primary/60 bg-clip-text text-transparent">{item.desc}</p>
-                  <p className="bg-gradient-to-b from-primary/90 to-primary/60 bg-clip-text text-transparent">{item.no}</p>
+                  <p className="bg-gradient-to-b from-primary/90 to-primary/60 bg-clip-text text-transparent">
+                    {item.desc}
+                  </p>
+                  <p className="bg-gradient-to-b from-primary/90 to-primary/60 bg-clip-text text-transparent">
+                    {item.no}
+                  </p>
                 </div>
               );
             })}
